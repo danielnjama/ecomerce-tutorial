@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .total {
+            font-weight: bold;
+            font-size: 1.2em;
+            text-align: right;
+        }
+        .cart-image {
+            display: block;
+            margin: 0 auto;
+            max-width: 100px;
+        }
+        .empty-cart {
+            text-align: center;
+            color: #999;
+        }
+        .checkout-button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin-left: 20px;
+            border: none;
+            cursor: pointer;
+        }
+        .checkout-button:hover {
+            background-color: #45a049;
+        }
+        .delete-button {
+            background-color: #f44336;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: #e53935;
+        }
+    </style>
+</head>
+<body>
+    <h1>Your Cart</h1>
+    {% if cart %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Image</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                    <tr id="cart-item-{{ item.id }}" data-price="{{ item.product.price }}" data-quantity="{{ item.quantity }}">
+                        <td>{{ item.product.name }}</td>
+                        <td>
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="cart-image">
+                            {% else %}
+                                <img src="https://via.placeholder.com/100" alt="Placeholder Image" class="cart-image">
+                            {% endif %}
+                        </td>
+                        <td>{{ item.quantity }}</td>
+                        <td>${{ item.product.price }}</td>
+                        <td>${{ item.total_price }}</td>
+                        <td>
+                            <button class="delete-button" onclick="deleteCartItem({{ item.id }})">Delete</button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="total">
+            <span id="total-value">Total: ${{ total_cart_value }}</span>
+            <button class="checkout-button" onclick="window.location.href='{% url 'checkout' %}'">Checkout</button>
+        </div>
+    {% else %}
+        <p class="empty-cart">Your cart is empty.</p>
+    {% endif %}
+    <script>
+        function deleteCartItem(itemId) {
+            fetch(`/delete_item/${itemId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.response === 'success') {
+                    const itemRow = document.getElementById(`cart-item-${itemId}`);
+                    const itemPrice = parseFloat(itemRow.getAttribute('data-price'));
+                    const itemQuantity = parseInt(itemRow.getAttribute('data-quantity'));
+                    const itemTotal = itemPrice * itemQuantity;
+
+                    itemRow.remove();
+                    
+                    // Update total cart value
+                    const totalValueElement = document.getElementById('total-value');
+                    let totalValue = parseFloat(totalValueElement.textContent.replace('Total: $', ''));
+                    totalValue -= itemTotal;
+                    totalValueElement.textContent = `Total: $${totalValue.toFixed(2)}`;
+                    
+                    // If cart is empty after deletion, show empty cart message
+                    if (document.querySelectorAll('tbody tr').length === 0) {
+                        document.querySelector('.total').remove();
+                        document.querySelector('table').remove();
+                        document.querySelector('body').insertAdjacentHTML('beforeend', '<p class="empty-cart">Your cart is empty.</p>');
+                    }
+                } else {
+                    alert('Error deleting item');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

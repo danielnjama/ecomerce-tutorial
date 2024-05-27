@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .content {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Checkout</h1>
+    <div class="content">
+        <p>Proceed with your payment and complete your purchase.</p>
+        <!-- Add your checkout form or payment integration here -->
+        <form action="{% url "confirmed_order" %}" method="post">
+            {% csrf_token %}
+            
+            <button> Confirm order </button>
+        </form>
+    </div>
+</body>
+</html>
